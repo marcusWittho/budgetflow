@@ -1,3 +1,15 @@
 spring:
   application:
     name: budgetflow
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: jdbc:postgresql://${URL_DB:localhost:5432}/budgetflow_db
+    username: ${USERNAME_DB:postgres}
+    password: ${PASSWORD_DB:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
