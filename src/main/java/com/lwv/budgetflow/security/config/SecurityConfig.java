@@ -46,7 +46,11 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
+        // CSRF desabilitado: o único cookie emitido (refresh_token) é SameSite=Lax e escopado a
+        // /api/auth, então não é enviado em requests cross-site; endpoints protegidos exigem
+        // Authorization: Bearer, que um form/fetch de outro site não consegue anexar.
         .csrf(csrf -> csrf.disable())
+        .cors(cors -> {})
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/actuator/health").permitAll()

@@ -9,5 +9,6 @@ public record JwtProperties(
     String secret,
     String issuer,
     Duration accessTokenTtl,
-    Duration refreshTokenTtl) {
+    Duration refreshTokenTtl,
+    boolean refreshCookieSecure) {
 }

@@ -2,11 +2,10 @@ package com.lwv.budgetflow.web.dto;
 
 public record AuthResponse(
     String accessToken,
-    String refreshToken,
     String tokenType,
     long expiresIn) {
 
-  public static AuthResponse of(String accessToken, String refreshToken, long expiresIn) {
-    return new AuthResponse(accessToken, refreshToken, "Bearer", expiresIn);
+  public static AuthResponse of(String accessToken, long expiresIn) {
+    return new AuthResponse(accessToken, "Bearer", expiresIn);
   }
 }

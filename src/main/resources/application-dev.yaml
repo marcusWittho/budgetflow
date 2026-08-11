@@ -8,6 +8,7 @@ security:
   jwt:
     # secret de dev, NUNCA usar em hml/prd — lá é obrigatório setar JWT_SECRET.
     secret: ${JWT_SECRET:3scnjlrBa4kpWnx+NACbxYkHWACSNvbeEjuTufw+SN8=}
+    refresh-cookie-secure: false
 
 logging:
   level:

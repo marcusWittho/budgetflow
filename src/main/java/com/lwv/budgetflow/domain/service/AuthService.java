@@ -37,7 +37,7 @@ public class AuthService {
   private final JwtProperties jwtProperties;
 
   @Transactional
-  public AuthResponse register(RegisterRequest request) {
+  public AuthResult register(RegisterRequest request) {
     userRepository.findByEmail(request.email()).ifPresent(existing -> {
       throw new EmailAlreadyExistsException(request.email());
     });
@@ -54,7 +54,7 @@ public class AuthService {
   }
 
   @Transactional
-  public AuthResponse login(LoginRequest request) {
+  public AuthResult login(LoginRequest request) {
     authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(request.email(), request.password()));
 
@@ -67,7 +67,7 @@ public class AuthService {
   }
 
   @Transactional
-  public AuthResponse refresh(String refreshToken) {
+  public AuthResult refresh(String refreshToken) {
     String hash = hash(refreshToken);
     RefreshTokenEntity stored = refreshTokenRepository.findByTokenHashAndRevokedAtIsNull(hash);
 
@@ -94,7 +94,7 @@ public class AuthService {
     }
   }
 
-  private AuthResponse issueTokens(UserPrincipal principal) {
+  private AuthResult issueTokens(UserPrincipal principal) {
     String accessToken = jwtService.generateAccessToken(principal);
     String refreshToken = jwtService.generateOpaqueRefreshToken();
 
@@ -105,7 +105,8 @@ public class AuthService {
         .build();
     refreshTokenRepository.save(entity);
 
-    return AuthResponse.of(accessToken, refreshToken, jwtService.getAccessTokenTtlSeconds());
+    AuthResponse response = AuthResponse.of(accessToken, jwtService.getAccessTokenTtlSeconds());
+    return new AuthResult(response, refreshToken);
   }
 
   private String hash(String value) {
