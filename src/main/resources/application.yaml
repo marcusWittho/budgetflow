@@ -13,3 +13,10 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: false
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: budgetflow
+    access-token-ttl: 15m
+    refresh-token-ttl: 7d
