@@ -1,0 +1,212 @@
+### BudgetFlow — testes da API
+#
+# Requer a extensão "REST Client" (humao.rest-client) no VS Code.
+# Clique no "Send Request" acima de cada bloco.
+#
+# IMPORTANTE: todos os endpoints exigem token, porque o SecurityConfig
+# tem anyRequest().authenticated(). Rode o registro e o login primeiro.
+
+@host = http://localhost:8080
+
+
+### 1. Registrar usuário
+# Guarde o accessToken da resposta e cole na variável @token abaixo.
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "leo@teste.com",
+  "password": "senha12345",
+  "fullName": "Leonardo Witthoeft Vilarino"
+}
+
+
+### 2. Login
+# Use este quando o token expirar (15 minutos).
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "leo@teste.com",
+  "password": "senha12345"
+}
+
+
+### ----------------------------------------------------------------------
+### Cole o accessToken aqui, entre as aspas, depois de rodar o passo 1 ou 2
+### ----------------------------------------------------------------------
+
+@token = COLE_O_ACCESS_TOKEN_AQUI
+
+
+### 3. Provisionar a taxonomia
+# Cria 22 categorias, 85 subcategorias, 5 contas e 6 formas para este
+# usuário. Idempotente: rodar de novo devolve jaExistia = true.
+POST {{host}}/api/categories/provision
+Authorization: Bearer {{token}}
+
+
+### 4. Árvore de categorias
+# Cada categoria vem com as subcategorias aninhadas.
+GET {{host}}/api/categories
+Authorization: Bearer {{token}}
+
+
+### 5. Contas e formas de pagamento
+GET {{host}}/api/lookups
+Authorization: Bearer {{token}}
+
+
+### ----------------------------------------------------------------------
+### Lançamentos — pegue os UUIDs dos passos 4 e 5 e cole abaixo
+### ----------------------------------------------------------------------
+
+
+### 6. Lançamento avulso
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-09-01",
+  "categoryId": "COLE_O_UUID_DE_MORADIA",
+  "description": "Aluguel setembro",
+  "amount": 1800.00,
+  "status": "paid"
+}
+
+
+### 7. Compra parcelada — O TESTE IMPORTANTE
+#
+# Data escolhida de propósito: 31 de janeiro.
+#
+# As quatro parcelas devem sair em 31/01, 28/02, 31/03 e 30/04.
+#
+# Fevereiro encaixa no dia 28 porque 2026 não é bissexto. E março VOLTA
+# para o dia 31 — porque cada parcela é calculada somando meses à data
+# original, nunca à parcela anterior. Somando de uma em uma, travaria no
+# dia 28 para sempre.
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-01-31",
+  "categoryId": "COLE_O_UUID_DE_MORADIA",
+  "description": "Geladeira",
+  "amount": 250.00,
+  "status": "paid",
+  "repeticao": "installment",
+  "totalParcelas": 4
+}
+
+
+### 8. Assinatura mensal
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-09-05",
+  "categoryId": "COLE_O_UUID_DE_LAZER",
+  "description": "Streaming",
+  "amount": 39.90,
+  "status": "paid",
+  "repeticao": "recurring",
+  "meses": 6
+}
+
+
+### 9. Fevereiro — deve trazer a parcela 2/4, no dia 28
+GET {{host}}/api/entries?month=2026-02
+Authorization: Bearer {{token}}
+
+
+### 10. Março — deve trazer a 3/4, de volta no dia 31
+GET {{host}}/api/entries?month=2026-03
+Authorization: Bearer {{token}}
+
+
+### 11. O ano inteiro
+GET {{host}}/api/entries?de=2026-01-01&ate=2026-12-31
+Authorization: Bearer {{token}}
+
+
+### 12. Marcar como pago
+PATCH {{host}}/api/entries/COLE_O_UUID_DO_LANCAMENTO/pagar
+Authorization: Bearer {{token}}
+
+
+### 13. Apagar
+DELETE {{host}}/api/entries/COLE_O_UUID_DO_LANCAMENTO
+Authorization: Bearer {{token}}
+
+
+### ======================================================================
+### ERROS — vale provocar
+### ======================================================================
+
+
+### Sem token — espera 401
+GET {{host}}/api/entries
+
+
+### Valor negativo — espera 400
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-09-01",
+  "categoryId": "COLE_O_UUID_DE_MORADIA",
+  "description": "teste",
+  "amount": -50.00,
+  "status": "paid"
+}
+
+
+### Categoria de outro usuário — espera 404
+# Este é o teste de segurança que importa. Registre um segundo usuário,
+# pegue o UUID de uma categoria DELE, e tente usar com o SEU token.
+# Deve dar 404, não 200 — o findByIdAndUserId não encontra.
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-09-01",
+  "categoryId": "UUID_DE_CATEGORIA_DE_OUTRO_USUARIO",
+  "description": "teste de vazamento",
+  "amount": 10.00,
+  "status": "paid"
+}
+
+
+### Subcategoria de outra categoria — espera 400
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-09-01",
+  "categoryId": "COLE_O_UUID_DE_TRANSPORTE",
+  "subcategoryId": "COLE_UM_UUID_DE_SUBCATEGORIA_DE_MORADIA",
+  "description": "teste",
+  "amount": 10.00,
+  "status": "paid"
+}
+
+
+### Parcelado sem informar o total — espera 400
+POST {{host}}/api/entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "entryDate": "2026-09-01",
+  "categoryId": "COLE_O_UUID_DE_MORADIA",
+  "description": "teste",
+  "amount": 10.00,
+  "status": "paid",
+  "repeticao": "installment"
+}

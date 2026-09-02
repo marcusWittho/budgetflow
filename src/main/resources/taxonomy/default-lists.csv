@@ -1,0 +1,12 @@
+type,name
+account,Carteira
+account,Conta Corrente
+account,Cartão de Crédito
+account,Poupança
+account,Corretora
+payment_method,Pix
+payment_method,Débito
+payment_method,Crédito
+payment_method,Dinheiro
+payment_method,Boleto
+payment_method,Transferência
