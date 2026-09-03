@@ -2,7 +2,7 @@ package com.lwv.budgetflow.ledger.web;
 
 import com.lwv.budgetflow.ledger.domain.Entry;
 import com.lwv.budgetflow.ledger.service.EntryService;
-import com.lwv.budgetflow.security.userdetails.UserPrincipal;
+import com.lwv.budgetflow.auth.security.UserPrincipal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
