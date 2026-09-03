@@ -2,7 +2,7 @@ package com.lwv.budgetflow.accounts.web;
 
 import com.lwv.budgetflow.accounts.repository.AccountRepository;
 import com.lwv.budgetflow.accounts.repository.PaymentMethodRepository;
-import com.lwv.budgetflow.security.userdetails.UserPrincipal;
+import com.lwv.budgetflow.auth.security.UserPrincipal;
 import java.util.UUID;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;

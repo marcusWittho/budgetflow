@@ -1,6 +1,6 @@
 package com.lwv.budgetflow.taxonomy.web;
 
-import com.lwv.budgetflow.security.userdetails.UserPrincipal;
+import com.lwv.budgetflow.auth.security.UserPrincipal;
 import com.lwv.budgetflow.taxonomy.repository.CategoryRepository;
 import com.lwv.budgetflow.taxonomy.service.TaxonomyProvisioningService;
 import java.util.List;
