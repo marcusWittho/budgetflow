@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
+  private static final String ACCESS_COOKIE_NAME = "access_token";
   private static final String REFRESH_COOKIE_NAME = "refresh_token";
 
   private final AuthService authService;
@@ -33,6 +34,7 @@ public class AuthController {
   public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
     AuthResult result = authService.register(request);
     return ResponseEntity.status(HttpStatus.CREATED)
+        .header(HttpHeaders.SET_COOKIE, accessCookie(result.response().accessToken(), result.response().expiresIn()).toString())
         .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
         .body(result.response());
   }
@@ -41,6 +43,7 @@ public class AuthController {
   public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
     AuthResult result = authService.login(request);
     return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, accessCookie(result.response().accessToken(), result.response().expiresIn()).toString())
         .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
         .body(result.response());
   }
@@ -54,6 +57,7 @@ public class AuthController {
 
     AuthResult result = authService.refresh(refreshToken);
     return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, accessCookie(result.response().accessToken(), result.response().expiresIn()).toString())
         .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
         .body(result.response());
   }
@@ -66,7 +70,18 @@ public class AuthController {
     }
 
     return ResponseEntity.noContent()
+        .header(HttpHeaders.SET_COOKIE, expiredAccessCookie().toString())
         .header(HttpHeaders.SET_COOKIE, expiredRefreshCookie().toString())
+        .build();
+  }
+
+  private ResponseCookie accessCookie(String accessToken, long expiresIn) {
+    return ResponseCookie.from(ACCESS_COOKIE_NAME, accessToken)
+        .httpOnly(true)
+        .secure(jwtProperties.refreshCookieSecure())
+        .sameSite("Lax")
+        .path("/api")
+        .maxAge(expiresIn)
         .build();
   }
 
@@ -77,6 +92,16 @@ public class AuthController {
         .sameSite("Lax")
         .path("/api/auth")
         .maxAge(jwtProperties.refreshTokenTtl())
+        .build();
+  }
+
+  private ResponseCookie expiredAccessCookie() {
+    return ResponseCookie.from(ACCESS_COOKIE_NAME, "")
+        .httpOnly(true)
+        .secure(jwtProperties.refreshCookieSecure())
+        .sameSite("Lax")
+        .path("/api")
+        .maxAge(0)
         .build();
   }
 

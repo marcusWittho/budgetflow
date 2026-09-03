@@ -3,6 +3,7 @@ package com.lwv.budgetflow.auth.security;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.annotation.Nonnull;
@@ -39,10 +40,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   private Optional<String> extractToken(HttpServletRequest request) {
+    // Try to get token from Authorization header first
     String header = request.getHeader("Authorization");
     if (header != null && header.startsWith(BEARER_PREFIX)) {
       return Optional.of(header.substring(BEARER_PREFIX.length()));
     }
+
+    // If not found, try to get from access_token cookie
+    if (request.getCookies() != null) {
+      for (Cookie cookie : request.getCookies()) {
+        if ("access_token".equals(cookie.getName())) {
+          return Optional.of(cookie.getValue());
+        }
+      }
+    }
+
     return Optional.empty();
   }
 
