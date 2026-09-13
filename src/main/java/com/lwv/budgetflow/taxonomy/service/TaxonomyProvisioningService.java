@@ -1,7 +1,7 @@
 package com.lwv.budgetflow.taxonomy.service;
 
-import com.lwv.budgetflow.accounts.domain.Account;
-import com.lwv.budgetflow.accounts.domain.PaymentMethod;
+import com.lwv.budgetflow.accounts.entity.AccountEntity;
+import com.lwv.budgetflow.accounts.entity.PaymentMethodEntity;
 import com.lwv.budgetflow.accounts.repository.AccountRepository;
 import com.lwv.budgetflow.accounts.repository.PaymentMethodRepository;
 import com.lwv.budgetflow.taxonomy.domain.Category;
@@ -43,120 +43,120 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TaxonomyProvisioningService {
 
-    private static final Logger log = LoggerFactory.getLogger(TaxonomyProvisioningService.class);
+  private static final Logger log = LoggerFactory.getLogger(TaxonomyProvisioningService.class);
 
-    private static final String TAXONOMY_CSV = "taxonomy/default-taxonomy.csv";
-    private static final String LISTS_CSV = "taxonomy/default-lists.csv";
+  private static final String TAXONOMY_CSV = "taxonomy/default-taxonomy.csv";
+  private static final String LISTS_CSV = "taxonomy/default-lists.csv";
 
-    private final CategoryRepository categoryRepository;
-    private final AccountRepository accountRepository;
-    private final PaymentMethodRepository paymentMethodRepository;
+  private final CategoryRepository categoryRepository;
+  private final AccountRepository accountRepository;
+  private final PaymentMethodRepository paymentMethodRepository;
 
-    public TaxonomyProvisioningService(CategoryRepository categoryRepository,
-                                       AccountRepository accountRepository,
-                                       PaymentMethodRepository paymentMethodRepository) {
-        this.categoryRepository = categoryRepository;
-        this.accountRepository = accountRepository;
-        this.paymentMethodRepository = paymentMethodRepository;
+  public TaxonomyProvisioningService(CategoryRepository categoryRepository,
+      AccountRepository accountRepository,
+      PaymentMethodRepository paymentMethodRepository) {
+    this.categoryRepository = categoryRepository;
+    this.accountRepository = accountRepository;
+    this.paymentMethodRepository = paymentMethodRepository;
+  }
+
+  public record Resultado(int categorias, int subcategorias,
+      int contas, int formas, boolean jaExistia) {
+  }
+
+  /**
+   * Idempotente: se o usuario ja tem categorias, nao faz nada. Assim pode
+   * ser chamado no cadastro e de novo por um endpoint manual sem
+   * duplicar.
+   */
+  @Transactional
+  public Resultado provisionar(UUID userId) {
+    if (categoryRepository.existsByUserId(userId)) {
+      return new Resultado(0, 0, 0, 0, true);
     }
 
-    public record Resultado(int categorias, int subcategorias,
-                            int contas, int formas, boolean jaExistia) {
+    int[] tax = provisionarTaxonomia(userId);
+    int[] listas = provisionarListas(userId);
+
+    log.info("Taxonomia provisionada para {}: {} categorias, {} subcategorias.",
+        userId, tax[0], tax[1]);
+
+    return new Resultado(tax[0], tax[1], listas[0], listas[1], false);
+  }
+
+  private int[] provisionarTaxonomia(UUID userId) {
+    // LinkedHashMap preserva a ordem do CSV, que vira o campo position.
+    // Assim o dropdown sai na ordem que voce desenhou na planilha, e
+    // nao em ordem alfabetica.
+    Map<String, Category> porChave = new LinkedHashMap<>();
+    int subcategorias = 0;
+    int posicao = 0;
+
+    for (String[] linha : lerCsv(TAXONOMY_CSV)) {
+      String tipo = linha[0];
+      String nomeCategoria = linha[1];
+      String nomeSubcategoria = linha[2];
+      String natureza = (linha.length > 3 && !linha[3].isBlank()) ? linha[3] : null;
+
+      String chave = tipo + "|" + nomeCategoria;
+      Category categoria = porChave.get(chave);
+
+      if (categoria == null) {
+        categoria = new Category(userId, tipo, nomeCategoria);
+        categoria.setPosition(posicao++);
+        porChave.put(chave, categoria);
+      }
+
+      categoria.addSubcategory(nomeSubcategoria, natureza);
+      subcategorias++;
     }
 
-    /**
-     * Idempotente: se o usuario ja tem categorias, nao faz nada. Assim pode
-     * ser chamado no cadastro e de novo por um endpoint manual sem
-     * duplicar.
-     */
-    @Transactional
-    public Resultado provisionar(UUID userId) {
-        if (categoryRepository.existsByUserId(userId)) {
-            return new Resultado(0, 0, 0, 0, true);
+    // O cascade da Category grava as subcategorias junto.
+    categoryRepository.saveAll(porChave.values());
+    return new int[] { porChave.size(), subcategorias };
+  }
+
+  private int[] provisionarListas(UUID userId) {
+    List<AccountEntity> contas = new ArrayList<>();
+    List<PaymentMethodEntity> formas = new ArrayList<>();
+
+    for (String[] linha : lerCsv(LISTS_CSV)) {
+      switch (linha[0]) {
+        case "account" -> contas.add(new AccountEntity(userId, linha[1]));
+        case "payment_method" -> formas.add(new PaymentMethodEntity(userId, linha[1]));
+        default -> throw new IllegalStateException("Tipo invalido no CSV: " + linha[0]);
+      }
+    }
+
+    accountRepository.saveAll(contas);
+    paymentMethodRepository.saveAll(formas);
+    return new int[] { contas.size(), formas.size() };
+  }
+
+  /**
+   * Leitor de CSV simples de proposito: os arquivos sao nossos, nao tem
+   * virgula dentro de campo nem aspas. Trazer uma biblioteca so para isso
+   * seria peso desnecessario.
+   */
+  private List<String[]> lerCsv(String caminho) {
+    List<String[]> linhas = new ArrayList<>();
+    ClassPathResource recurso = new ClassPathResource(caminho);
+
+    try (BufferedReader leitor = new BufferedReader(
+        new InputStreamReader(recurso.getInputStream(), StandardCharsets.UTF_8))) {
+
+      leitor.readLine(); // cabecalho
+
+      String linha;
+      while ((linha = leitor.readLine()) != null) {
+        if (!linha.isBlank()) {
+          linhas.add(linha.split(",", -1));
         }
-
-        int[] tax = provisionarTaxonomia(userId);
-        int[] listas = provisionarListas(userId);
-
-        log.info("Taxonomia provisionada para {}: {} categorias, {} subcategorias.",
-                userId, tax[0], tax[1]);
-
-        return new Resultado(tax[0], tax[1], listas[0], listas[1], false);
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException("Nao consegui ler " + caminho, e);
     }
 
-    private int[] provisionarTaxonomia(UUID userId) {
-        // LinkedHashMap preserva a ordem do CSV, que vira o campo position.
-        // Assim o dropdown sai na ordem que voce desenhou na planilha, e
-        // nao em ordem alfabetica.
-        Map<String, Category> porChave = new LinkedHashMap<>();
-        int subcategorias = 0;
-        int posicao = 0;
-
-        for (String[] linha : lerCsv(TAXONOMY_CSV)) {
-            String tipo = linha[0];
-            String nomeCategoria = linha[1];
-            String nomeSubcategoria = linha[2];
-            String natureza = (linha.length > 3 && !linha[3].isBlank()) ? linha[3] : null;
-
-            String chave = tipo + "|" + nomeCategoria;
-            Category categoria = porChave.get(chave);
-
-            if (categoria == null) {
-                categoria = new Category(userId, tipo, nomeCategoria);
-                categoria.setPosition(posicao++);
-                porChave.put(chave, categoria);
-            }
-
-            categoria.addSubcategory(nomeSubcategoria, natureza);
-            subcategorias++;
-        }
-
-        // O cascade da Category grava as subcategorias junto.
-        categoryRepository.saveAll(porChave.values());
-        return new int[]{porChave.size(), subcategorias};
-    }
-
-    private int[] provisionarListas(UUID userId) {
-        List<Account> contas = new ArrayList<>();
-        List<PaymentMethod> formas = new ArrayList<>();
-
-        for (String[] linha : lerCsv(LISTS_CSV)) {
-            switch (linha[0]) {
-                case "account" -> contas.add(new Account(userId, linha[1]));
-                case "payment_method" -> formas.add(new PaymentMethod(userId, linha[1]));
-                default -> throw new IllegalStateException("Tipo invalido no CSV: " + linha[0]);
-            }
-        }
-
-        accountRepository.saveAll(contas);
-        paymentMethodRepository.saveAll(formas);
-        return new int[]{contas.size(), formas.size()};
-    }
-
-    /**
-     * Leitor de CSV simples de proposito: os arquivos sao nossos, nao tem
-     * virgula dentro de campo nem aspas. Trazer uma biblioteca so para isso
-     * seria peso desnecessario.
-     */
-    private List<String[]> lerCsv(String caminho) {
-        List<String[]> linhas = new ArrayList<>();
-        ClassPathResource recurso = new ClassPathResource(caminho);
-
-        try (BufferedReader leitor = new BufferedReader(
-                new InputStreamReader(recurso.getInputStream(), StandardCharsets.UTF_8))) {
-
-            leitor.readLine(); // cabecalho
-
-            String linha;
-            while ((linha = leitor.readLine()) != null) {
-                if (!linha.isBlank()) {
-                    linhas.add(linha.split(",", -1));
-                }
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Nao consegui ler " + caminho, e);
-        }
-
-        return linhas;
-    }
+    return linhas;
+  }
 }

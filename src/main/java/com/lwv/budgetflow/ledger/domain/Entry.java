@@ -1,7 +1,7 @@
 package com.lwv.budgetflow.ledger.domain;
 
-import com.lwv.budgetflow.accounts.domain.Account;
-import com.lwv.budgetflow.accounts.domain.PaymentMethod;
+import com.lwv.budgetflow.accounts.entity.AccountEntity;
+import com.lwv.budgetflow.accounts.entity.PaymentMethodEntity;
 import com.lwv.budgetflow.taxonomy.domain.Category;
 import com.lwv.budgetflow.taxonomy.domain.Subcategory;
 import jakarta.persistence.*;
@@ -50,11 +50,11 @@ public class Entry {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
-    private Account account;
+    private AccountEntity account;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_method_id")
-    private PaymentMethod paymentMethod;
+    private PaymentMethodEntity paymentMethod;
 
     @Column(nullable = false, length = 300)
     private String description;
@@ -155,19 +155,19 @@ public class Entry {
         this.subcategory = subcategory;
     }
 
-    public Account getAccount() {
+    public AccountEntity getAccount() {
         return account;
     }
 
-    public void setAccount(Account account) {
+    public void setAccount(AccountEntity account) {
         this.account = account;
     }
 
-    public PaymentMethod getPaymentMethod() {
+    public PaymentMethodEntity getPaymentMethod() {
         return paymentMethod;
     }
 
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
+    public void setPaymentMethod(PaymentMethodEntity paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 

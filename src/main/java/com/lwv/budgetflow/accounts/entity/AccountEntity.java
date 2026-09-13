@@ -1,12 +1,18 @@
-package com.lwv.budgetflow.accounts.domain;
+package com.lwv.budgetflow.accounts.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.UUID;
 
 /** De onde o dinheiro saiu ou entrou: Conta Corrente, Carteira, Poupanca. */
 @Entity
 @Table(name = "accounts")
-public class Account {
+@Getter
+@NoArgsConstructor
+public class AccountEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -15,41 +21,19 @@ public class Account {
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
 
+    @Setter
     @Column(nullable = false, length = 120)
     private String name;
 
     @Column(nullable = false)
     private boolean archived = false;
 
-    protected Account() {
-    }
-
-    public Account(UUID userId, String name) {
+    public AccountEntity(UUID userId, String name) {
         this.userId = userId;
         this.name = name;
     }
 
     public void archive() {
         this.archived = true;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean isArchived() {
-        return archived;
     }
 }

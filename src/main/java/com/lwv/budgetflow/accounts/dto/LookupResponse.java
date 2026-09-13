@@ -1,4 +1,4 @@
-package com.lwv.budgetflow.accounts.web;
+package com.lwv.budgetflow.accounts.dto;
 
 import java.util.List;
 import java.util.UUID;
