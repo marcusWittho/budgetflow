@@ -1,6 +1,10 @@
-package com.lwv.budgetflow.ledger.domain;
+package com.lwv.budgetflow.ledger.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.UUID;
 
 /**
@@ -12,7 +16,9 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "entry_groups")
-public class EntryGroup {
+@Getter
+@NoArgsConstructor
+public class EntryGroupEntity {
 
     public static final String INSTALLMENT = "installment";
     public static final String RECURRING = "recurring";
@@ -30,26 +36,19 @@ public class EntryGroup {
     @Column(nullable = false, length = 20, updatable = false)
     private String kind;
 
-    /** Preenchido so em parcelamento. Assinatura nao tem total. */
     @Column(name = "total_installments")
     private Integer totalInstallments;
 
+    @Setter
     @Column(length = 200)
     private String label;
 
+    @Setter
     @Column(nullable = false)
     private boolean active = true;
 
-    protected EntryGroup() {
-    }
-
-    /**
-     * Fabricas estaticas em vez de construtor publico: os dois casos exigem
-     * campos diferentes, e assim fica impossivel criar uma assinatura com
-     * total de parcelas ou um parcelamento sem total.
-     */
-    public static EntryGroup installment(UUID userId, String code, int total, String label) {
-        EntryGroup g = new EntryGroup();
+    public static EntryGroupEntity installment(UUID userId, String code, int total, String label) {
+        EntryGroupEntity g = new EntryGroupEntity();
         g.userId = userId;
         g.code = code;
         g.kind = INSTALLMENT;
@@ -58,8 +57,8 @@ public class EntryGroup {
         return g;
     }
 
-    public static EntryGroup recurring(UUID userId, String code, String label) {
-        EntryGroup g = new EntryGroup();
+    public static EntryGroupEntity recurring(UUID userId, String code, String label) {
+        EntryGroupEntity g = new EntryGroupEntity();
         g.userId = userId;
         g.code = code;
         g.kind = RECURRING;
@@ -73,33 +72,5 @@ public class EntryGroup {
 
     public void deactivate() {
         this.active = false;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getKind() {
-        return kind;
-    }
-
-    public Integer getTotalInstallments() {
-        return totalInstallments;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public boolean isActive() {
-        return active;
     }
 }

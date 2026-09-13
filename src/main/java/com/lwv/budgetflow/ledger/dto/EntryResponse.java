@@ -1,6 +1,6 @@
-package com.lwv.budgetflow.ledger.web;
+package com.lwv.budgetflow.ledger.dto;
 
-import com.lwv.budgetflow.ledger.domain.Entry;
+import com.lwv.budgetflow.ledger.entity.EntryEntity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -35,7 +35,7 @@ public record EntryResponse(
         String installmentLabel
 ) {
 
-    public static EntryResponse from(Entry e) {
+    public static EntryResponse from(EntryEntity e) {
         var sub = e.getSubcategory();
         var conta = e.getAccount();
         var forma = e.getPaymentMethod();

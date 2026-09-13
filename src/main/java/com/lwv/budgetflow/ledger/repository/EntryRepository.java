@@ -1,7 +1,7 @@
 package com.lwv.budgetflow.ledger.repository;
 
-import com.lwv.budgetflow.ledger.domain.Entry;
-import com.lwv.budgetflow.ledger.domain.EntryGroup;
+import com.lwv.budgetflow.ledger.entity.EntryEntity;
+import com.lwv.budgetflow.ledger.entity.EntryGroupEntity;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -9,7 +9,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-public interface EntryRepository extends JpaRepository<Entry, UUID> {
+public interface EntryRepository extends JpaRepository<EntryEntity, UUID> {
 
     /**
      * A consulta da tela principal.
@@ -23,7 +23,7 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
      * descartaria os lancamentos sem subcategoria, conta ou forma.
      */
     @Query("""
-           select e from Entry e
+           select e from EntryEntity e
            join fetch e.category
            left join fetch e.subcategory
            left join fetch e.account
@@ -32,12 +32,12 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
            where e.userId = :userId and e.entryDate between :de and :ate
            order by e.entryDate desc, e.id desc
            """)
-    List<Entry> findPeriodo(UUID userId, LocalDate de, LocalDate ate);
+    List<EntryEntity> findPeriodo(UUID userId, LocalDate de, LocalDate ate);
 
-    Optional<Entry> findByIdAndUserId(UUID id, UUID userId);
+    Optional<EntryEntity> findByIdAndUserId(UUID id, UUID userId);
 
-    Optional<Entry> findTopByGroupOrderByEntryDateDesc(EntryGroup group);
+    Optional<EntryEntity> findTopByGroupOrderByEntryDateDesc(EntryGroupEntity group);
 
-    List<Entry> findByGroupAndStatusAndEntryDateAfter(
-            EntryGroup group, String status, LocalDate depoisDe);
+    List<EntryEntity> findByGroupAndStatusAndEntryDateAfter(
+            EntryGroupEntity group, String status, LocalDate depoisDe);
 }

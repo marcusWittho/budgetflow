@@ -1,6 +1,6 @@
 package com.lwv.budgetflow.ledger.repository;
 
-import com.lwv.budgetflow.ledger.domain.EntryGroup;
+import com.lwv.budgetflow.ledger.entity.EntryGroupEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -8,11 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface EntryGroupRepository extends JpaRepository<EntryGroup, UUID> {
+public interface EntryGroupRepository extends JpaRepository<EntryGroupEntity, UUID> {
 
-    Optional<EntryGroup> findByIdAndUserId(UUID id, UUID userId);
+    Optional<EntryGroupEntity> findByIdAndUserId(UUID id, UUID userId);
 
-    List<EntryGroup> findByKindAndActiveTrue(String kind);
+    List<EntryGroupEntity> findByKindAndActiveTrue(String kind);
 
     /**
      * Maior numero ja usado num prefixo (P ou R) por este usuario; 0 se

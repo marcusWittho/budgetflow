@@ -1,10 +1,14 @@
-package com.lwv.budgetflow.ledger.domain;
+package com.lwv.budgetflow.ledger.entity;
 
 import com.lwv.budgetflow.accounts.entity.AccountEntity;
 import com.lwv.budgetflow.accounts.entity.PaymentMethodEntity;
 import com.lwv.budgetflow.taxonomy.domain.Category;
 import com.lwv.budgetflow.taxonomy.domain.Subcategory;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -25,7 +29,9 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "entries")
-public class Entry {
+@Getter
+@NoArgsConstructor
+public class EntryEntity {
 
     public static final String PAID = "paid";
     public static final String PENDING = "pending";
@@ -37,50 +43,57 @@ public class Entry {
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
 
+    @Setter
     @Column(name = "entry_date", nullable = false)
     private LocalDate entryDate;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subcategory_id")
     private Subcategory subcategory;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
     private AccountEntity account;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_method_id")
     private PaymentMethodEntity paymentMethod;
 
+    @Setter
     @Column(nullable = false, length = 300)
     private String description;
 
+    @Setter
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    @Setter
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Setter
     @Column(columnDefinition = "text")
     private String notes;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
-    private EntryGroup group;
+    private EntryGroupEntity group;
 
-    /** O 9 em "9 de 21". Em assinatura, o contador da mensalidade. */
+    @Setter
     @Column(name = "installment_number")
     private Integer installmentNumber;
 
-    protected Entry() {
-    }
-
-    public Entry(UUID userId, LocalDate entryDate, Category category,
-                 String description, BigDecimal amount, String status) {
+    public EntryEntity(UUID userId, LocalDate entryDate, Category category,
+                       String description, BigDecimal amount, String status) {
         this.userId = userId;
         this.entryDate = entryDate;
         this.category = category;
@@ -89,13 +102,8 @@ public class Entry {
         this.status = status;
     }
 
-    /**
-     * Copia rasa, usada para gerar as parcelas seguintes a partir da
-     * primeira. Herda conta e forma: uma compra parcelada no cartao
-     * continua no cartao nos meses seguintes.
-     */
-    public Entry copyForDate(LocalDate newDate, String newStatus) {
-        Entry copy = new Entry(userId, newDate, category, description, amount, newStatus);
+    public EntryEntity copyForDate(LocalDate newDate, String newStatus) {
+        EntryEntity copy = new EntryEntity(userId, newDate, category, description, amount, newStatus);
         copy.subcategory = this.subcategory;
         copy.account = this.account;
         copy.paymentMethod = this.paymentMethod;
@@ -103,12 +111,11 @@ public class Entry {
         return copy;
     }
 
-    public void attachToGroup(EntryGroup group, int installmentNumber) {
+    public void attachToGroup(EntryGroupEntity group, int installmentNumber) {
         this.group = group;
         this.installmentNumber = installmentNumber;
     }
 
-    /** "9/21" em parcelamento, "recorrente" em assinatura, vazio no resto. */
     public String installmentLabel() {
         if (group == null) {
             return "";
@@ -121,93 +128,5 @@ public class Entry {
 
     public void markPaid() {
         this.status = PAID;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public LocalDate getEntryDate() {
-        return entryDate;
-    }
-
-    public void setEntryDate(LocalDate entryDate) {
-        this.entryDate = entryDate;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public Subcategory getSubcategory() {
-        return subcategory;
-    }
-
-    public void setSubcategory(Subcategory subcategory) {
-        this.subcategory = subcategory;
-    }
-
-    public AccountEntity getAccount() {
-        return account;
-    }
-
-    public void setAccount(AccountEntity account) {
-        this.account = account;
-    }
-
-    public PaymentMethodEntity getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(PaymentMethodEntity paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public EntryGroup getGroup() {
-        return group;
-    }
-
-    public Integer getInstallmentNumber() {
-        return installmentNumber;
     }
 }

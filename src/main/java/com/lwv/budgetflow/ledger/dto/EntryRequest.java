@@ -1,4 +1,4 @@
-package com.lwv.budgetflow.ledger.web;
+package com.lwv.budgetflow.ledger.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -1,8 +1,10 @@
-package com.lwv.budgetflow.ledger.web;
+package com.lwv.budgetflow.ledger.controller;
 
-import com.lwv.budgetflow.ledger.domain.Entry;
+import com.lwv.budgetflow.ledger.dto.EntryRequest;
+import com.lwv.budgetflow.ledger.dto.EntryResponse;
 import com.lwv.budgetflow.ledger.service.EntryService;
 import com.lwv.budgetflow.auth.security.UserPrincipal;
+import lombok.RequiredArgsConstructor;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -22,13 +24,10 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/entries")
+@RequiredArgsConstructor
 public class EntryController {
 
     private final EntryService service;
-
-    public EntryController(EntryService service) {
-        this.service = service;
-    }
 
     /**
      * Cria lancamento avulso, compra parcelada ou assinatura.
@@ -63,7 +62,7 @@ public class EntryController {
 
         UUID userId = principal.getId();
 
-        List<Entry> lancamentos = (de != null && ate != null)
+        List<com.lwv.budgetflow.ledger.entity.EntryEntity> lancamentos = (de != null && ate != null)
                 ? service.listarPeriodo(userId, de, ate)
                 : service.listarMes(userId, month == null ? YearMonth.now() : month);
 
