@@ -156,6 +156,68 @@ export SPRING_PROFILES_ACTIVE=dev
 
 A aplicação inicia em `http://localhost:8080`.
 
+## Testes
+
+### Cobertura de Testes
+A suite de testes cobre as 6 features principais com **56 testes unitários** (JUnit 5 + Mockito), atingindo **100% de taxa de sucesso**.
+
+| Feature | Testes | Cobertura |
+|---------|--------|-----------|
+| **AuthService** | 8 | Registro, login, refresh, logout |
+| **JwtService** | 9 | Geração e validação de tokens JWT |
+| **EntryService** | 16 | CRUD de lançamentos/orçamentos |
+| **EntryScheduleService** | 14 | Parcelamento, recorrência, agendamento |
+| **TaxonomyProvisioningService** | 3 | Provisão de categorias padrão |
+| **LookupService** | 5 | Contas e formas de pagamento |
+| **TOTAL** | **56** | **100% Sucesso** |
+
+### Executar Testes
+
+```bash
+# Todos os testes
+./gradlew test
+
+# Teste específico
+./gradlew test --tests AuthServiceTest
+
+# Um método específico
+./gradlew test --tests AuthServiceTest.testRegisterSuccess
+
+# Com output detalhado
+./gradlew test --info
+
+# Reexecutar (pulando cache)
+./gradlew test --rerun-tasks
+
+# Ver relatório HTML
+open build/reports/tests/test/index.html
+```
+
+### Estrutura de Testes
+
+Os testes seguem o padrão **AAA (Arrange, Act, Assert)** com:
+- Mocking completo de dependências com Mockito
+- Testes de casos de sucesso, erros e edge cases
+- Verificação de chamadas com `ArgumentCaptor` quando necessário
+- Uso de `@DisplayName` para documentação clara
+
+Exemplo:
+```java
+@Test
+@DisplayName("deve registrar novo usuário com sucesso")
+void testRegisterSuccess() {
+    // Arrange
+    when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+    
+    // Act
+    AuthResult result = authService.register(request);
+    
+    // Assert
+    assertNotNull(result);
+    verify(userRepository).save(any());
+}
+```
+
 ## Database & Migrations
 
 - **Engine:** PostgreSQL
