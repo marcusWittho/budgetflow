@@ -4,8 +4,9 @@ import com.lwv.budgetflow.accounts.entity.AccountEntity;
 import com.lwv.budgetflow.accounts.entity.PaymentMethodEntity;
 import com.lwv.budgetflow.accounts.repository.AccountRepository;
 import com.lwv.budgetflow.accounts.repository.PaymentMethodRepository;
-import com.lwv.budgetflow.taxonomy.domain.Category;
+import com.lwv.budgetflow.taxonomy.entity.CategoryEntity;
 import com.lwv.budgetflow.taxonomy.repository.CategoryRepository;
+import lombok.RequiredArgsConstructor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -41,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
  * duas tabelas, o que e irrelevante para o Postgres.
  */
 @Service
+@RequiredArgsConstructor
 public class TaxonomyProvisioningService {
 
   private static final Logger log = LoggerFactory.getLogger(TaxonomyProvisioningService.class);
@@ -51,14 +53,6 @@ public class TaxonomyProvisioningService {
   private final CategoryRepository categoryRepository;
   private final AccountRepository accountRepository;
   private final PaymentMethodRepository paymentMethodRepository;
-
-  public TaxonomyProvisioningService(CategoryRepository categoryRepository,
-      AccountRepository accountRepository,
-      PaymentMethodRepository paymentMethodRepository) {
-    this.categoryRepository = categoryRepository;
-    this.accountRepository = accountRepository;
-    this.paymentMethodRepository = paymentMethodRepository;
-  }
 
   public record Resultado(int categorias, int subcategorias,
       int contas, int formas, boolean jaExistia) {
@@ -85,10 +79,7 @@ public class TaxonomyProvisioningService {
   }
 
   private int[] provisionarTaxonomia(UUID userId) {
-    // LinkedHashMap preserva a ordem do CSV, que vira o campo position.
-    // Assim o dropdown sai na ordem que voce desenhou na planilha, e
-    // nao em ordem alfabetica.
-    Map<String, Category> porChave = new LinkedHashMap<>();
+    Map<String, CategoryEntity> porChave = new LinkedHashMap<>();
     int subcategorias = 0;
     int posicao = 0;
 
@@ -99,10 +90,10 @@ public class TaxonomyProvisioningService {
       String natureza = (linha.length > 3 && !linha[3].isBlank()) ? linha[3] : null;
 
       String chave = tipo + "|" + nomeCategoria;
-      Category categoria = porChave.get(chave);
+      CategoryEntity categoria = porChave.get(chave);
 
       if (categoria == null) {
-        categoria = new Category(userId, tipo, nomeCategoria);
+        categoria = new CategoryEntity(userId, tipo, nomeCategoria);
         categoria.setPosition(posicao++);
         porChave.put(chave, categoria);
       }
@@ -111,7 +102,6 @@ public class TaxonomyProvisioningService {
       subcategorias++;
     }
 
-    // O cascade da Category grava as subcategorias junto.
     categoryRepository.saveAll(porChave.values());
     return new int[] { porChave.size(), subcategorias };
   }

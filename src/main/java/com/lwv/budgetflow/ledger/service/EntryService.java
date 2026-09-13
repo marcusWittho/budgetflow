@@ -5,8 +5,8 @@ import com.lwv.budgetflow.accounts.repository.PaymentMethodRepository;
 import com.lwv.budgetflow.ledger.dto.EntryRequest;
 import com.lwv.budgetflow.ledger.entity.EntryEntity;
 import com.lwv.budgetflow.ledger.repository.EntryRepository;
-import com.lwv.budgetflow.taxonomy.domain.Category;
-import com.lwv.budgetflow.taxonomy.domain.Subcategory;
+import com.lwv.budgetflow.taxonomy.entity.CategoryEntity;
+import com.lwv.budgetflow.taxonomy.entity.SubcategoryEntity;
 import com.lwv.budgetflow.taxonomy.repository.CategoryRepository;
 import com.lwv.budgetflow.taxonomy.repository.SubcategoryRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -114,7 +114,7 @@ public class EntryService {
     }
 
     private EntryEntity montar(UUID userId, EntryRequest p) {
-        Category categoria = categoryRepository.findByIdAndUserId(p.categoryId(), userId)
+        CategoryEntity categoria = categoryRepository.findByIdAndUserId(p.categoryId(), userId)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria nao encontrada."));
 
         EntryEntity lancamento = new EntryEntity(userId, p.entryDate(), categoria,
@@ -122,7 +122,7 @@ public class EntryService {
         lancamento.setNotes(p.notes());
 
         if (p.subcategoryId() != null) {
-            Subcategory sub = subcategoryRepository
+            SubcategoryEntity sub = subcategoryRepository
                     .findByIdAndCategoryUserId(p.subcategoryId(), userId)
                     .orElseThrow(() -> new EntityNotFoundException(
                             "Subcategoria nao encontrada."));

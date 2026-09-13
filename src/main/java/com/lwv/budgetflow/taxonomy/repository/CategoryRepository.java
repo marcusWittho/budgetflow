@@ -1,6 +1,6 @@
 package com.lwv.budgetflow.taxonomy.repository;
 
-import com.lwv.budgetflow.taxonomy.domain.Category;
+import com.lwv.budgetflow.taxonomy.entity.CategoryEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,9 +12,9 @@ import org.springframework.data.jpa.repository.Query;
  * tenancy. Um findById solto devolveria a categoria de outro assinante se
  * alguem chutasse o UUID na URL.
  */
-public interface CategoryRepository extends JpaRepository<Category, UUID> {
+public interface CategoryRepository extends JpaRepository<CategoryEntity, UUID> {
 
-    Optional<Category> findByIdAndUserId(UUID id, UUID userId);
+    Optional<CategoryEntity> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByUserId(UUID userId);
 
@@ -24,13 +24,13 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
      * categoria — 22 consultas em vez de uma.
      */
     @Query("""
-           select distinct c from Category c
+           select distinct c from CategoryEntity c
            left join fetch c.subcategories s
            where c.userId = :userId and c.archived = false
            order by c.type asc, c.position asc, c.name asc
            """)
-    List<Category> findArvore(UUID userId);
+    List<CategoryEntity> findArvore(UUID userId);
 
-    List<Category> findByUserIdAndTypeAndArchivedFalseOrderByPositionAscNameAsc(
+    List<CategoryEntity> findByUserIdAndTypeAndArchivedFalseOrderByPositionAscNameAsc(
             UUID userId, String type);
 }

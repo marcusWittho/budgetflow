@@ -2,8 +2,8 @@ package com.lwv.budgetflow.ledger.entity;
 
 import com.lwv.budgetflow.accounts.entity.AccountEntity;
 import com.lwv.budgetflow.accounts.entity.PaymentMethodEntity;
-import com.lwv.budgetflow.taxonomy.domain.Category;
-import com.lwv.budgetflow.taxonomy.domain.Subcategory;
+import com.lwv.budgetflow.taxonomy.entity.CategoryEntity;
+import com.lwv.budgetflow.taxonomy.entity.SubcategoryEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,12 +50,12 @@ public class EntryEntity {
     @Setter
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    private CategoryEntity category;
 
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subcategory_id")
-    private Subcategory subcategory;
+    private SubcategoryEntity subcategory;
 
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
@@ -92,7 +92,7 @@ public class EntryEntity {
     @Column(name = "installment_number")
     private Integer installmentNumber;
 
-    public EntryEntity(UUID userId, LocalDate entryDate, Category category,
+    public EntryEntity(UUID userId, LocalDate entryDate, CategoryEntity category,
                        String description, BigDecimal amount, String status) {
         this.userId = userId;
         this.entryDate = entryDate;

@@ -1,8 +1,10 @@
-package com.lwv.budgetflow.taxonomy.web;
+package com.lwv.budgetflow.taxonomy.controller;
 
+import com.lwv.budgetflow.taxonomy.dto.CategoryResponse;
 import com.lwv.budgetflow.auth.security.UserPrincipal;
 import com.lwv.budgetflow.taxonomy.repository.CategoryRepository;
 import com.lwv.budgetflow.taxonomy.service.TaxonomyProvisioningService;
+import lombok.RequiredArgsConstructor;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,16 +22,11 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/categories")
+@RequiredArgsConstructor
 public class CategoryController {
 
     private final CategoryRepository repository;
     private final TaxonomyProvisioningService provisioning;
-
-    public CategoryController(CategoryRepository repository,
-                              TaxonomyProvisioningService provisioning) {
-        this.repository = repository;
-        this.provisioning = provisioning;
-    }
 
     @GetMapping
     @Transactional(readOnly = true)

@@ -1,7 +1,7 @@
-package com.lwv.budgetflow.taxonomy.web;
+package com.lwv.budgetflow.taxonomy.dto;
 
-import com.lwv.budgetflow.taxonomy.domain.Category;
-import com.lwv.budgetflow.taxonomy.domain.Subcategory;
+import com.lwv.budgetflow.taxonomy.entity.CategoryEntity;
+import com.lwv.budgetflow.taxonomy.entity.SubcategoryEntity;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,7 +13,7 @@ public record CategoryResponse(
         List<SubcategoryResponse> subcategories
 ) {
 
-    public static CategoryResponse from(Category c) {
+    public static CategoryResponse from(CategoryEntity c) {
         return new CategoryResponse(
                 c.getId(),
                 c.getType(),
@@ -26,7 +26,7 @@ public record CategoryResponse(
 
     public record SubcategoryResponse(UUID id, String name, String nature) {
 
-        public static SubcategoryResponse from(Subcategory s) {
+        public static SubcategoryResponse from(SubcategoryEntity s) {
             return new SubcategoryResponse(s.getId(), s.getName(), s.getNature());
         }
     }
