@@ -1,7 +1,8 @@
 package com.lwv.budgetflow.ledger.service;
 
-import com.lwv.budgetflow.ledger.domain.EntryGroup;
+import com.lwv.budgetflow.ledger.entity.EntryGroupEntity;
 import com.lwv.budgetflow.ledger.repository.EntryGroupRepository;
+import lombok.RequiredArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
  * metodo simplesmente nunca roda, e nao ha erro nenhum avisando.
  */
 @Component
+@RequiredArgsConstructor
 public class RecurringMaintenanceJob {
 
     private static final Logger log = LoggerFactory.getLogger(RecurringMaintenanceJob.class);
@@ -27,19 +29,13 @@ public class RecurringMaintenanceJob {
     private final EntryGroupRepository groupRepository;
     private final EntryScheduleService scheduleService;
 
-    public RecurringMaintenanceJob(EntryGroupRepository groupRepository,
-                                   EntryScheduleService scheduleService) {
-        this.groupRepository = groupRepository;
-        this.scheduleService = scheduleService;
-    }
-
     @Scheduled(cron = "0 30 3 * * *")
     public void estenderAssinaturas() {
         LocalDate hoje = LocalDate.now();
-        List<EntryGroup> ativas = groupRepository.findByKindAndActiveTrue(EntryGroup.RECURRING);
+        List<EntryGroupEntity> ativas = groupRepository.findByKindAndActiveTrue(EntryGroupEntity.RECURRING);
 
         int criadas = 0;
-        for (EntryGroup grupo : ativas) {
+        for (EntryGroupEntity grupo : ativas) {
             criadas += scheduleService.estenderRecorrente(grupo, HORIZONTE, hoje);
         }
 
