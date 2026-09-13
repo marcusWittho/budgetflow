@@ -1,157 +1,343 @@
-# CLAUDE.md
+# BudgetFlow Backend - Guia para Claude
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Orientações específicas para trabalhar com o backend Spring Boot do BudgetFlow.
 
-## Project Overview
-
-BudgetFlow is a SaaS web application for quote/budget generation. It's a Java 21 Spring Boot backend (monolithic modular architecture) with PostgreSQL, using Liquibase for migrations and Spring Security for authentication.
-
-## Common Commands
-
-### Running the Application
-
-```bash
-# Run with development profile (default)
-./gradlew bootRun
-
-# Run with specific profile
-./gradlew bootRun --args='--spring.profiles.active=prd'
-```
-
-### Testing
-
-```bash
-# Run all tests
-./gradlew test
-
-# Run a specific test class
-./gradlew test --tests com.lwv.budgetflow.SomeTest
-
-# Run a specific test method
-./gradlew test --tests com.lwv.budgetflow.SomeTest.someMethod
-```
-
-### Building
-
-```bash
-# Build a JAR (outputs to build/libs/)
-./gradlew build
-
-# Build without running tests
-./gradlew build -x test
-
-# Clean build
-./gradlew clean build
-```
-
-### Dependencies
-
-```bash
-# Check for dependency vulnerabilities
-./gradlew dependencyCheck
-
-# Show dependency tree
-./gradlew dependencies
-```
-
-## Architecture & Modules
-
-The application uses a modular monolithic architecture where each domain is split into its own package with clear layer separation: `domain`, `repository`, `service`, and `web`.
-
-### Core Modules
-
-**domain/** — Core entities and infrastructure
-- `entity/` — JPA entities (User, Organization, RefreshToken)
-- `enums/` — Enums (UserStatus, OrganizationStatus, PlanType)
-- `converter/` — JPA converters for enums
-- `repository/` — Spring Data JPA repositories
-- `service/` — Core business logic (AuthService)
-
-**security/** — Authentication & authorization
-- `config/` — Spring Security configuration and CORS properties
-- `jwt/` — JWT token generation/validation (JwtService, JwtProperties) with access token (15m) and refresh token (7d) TTL
-- `userdetails/` — Custom UserDetailsService for Spring Security
-
-**ledger/** — Personal budget/ledger management
-- `domain/` — Ledger-specific entities
-- `service/` — EntryService (budget entries), EntryScheduleService (scheduled entries)
-- `repository/` — Ledger repositories
-- `web/` — REST controllers
-
-**taxonomy/** — Budget category taxonomy per user
-- `domain/` — Category entities
-- `service/` — TaxonomyProvisioningService (auto-provisions default categories on user registration)
-- `repository/` — Category repositories
-- `web/` — CategoryController
-
-**accounts/** — Payment methods & account lookups
-- `domain/` — Account, PaymentMethod entities
-- `repository/` — Repositories
-- `web/` — LookupController (returns available payment methods, etc.)
-
-**web/** — Global authentication endpoints
-- `controller/` — AuthController (register, login, logout), UserController
-- `dto/` — Request/response DTOs
-- `exception/` — GlobalExceptionHandler, custom exceptions
-
-**shared/** — Cross-cutting utilities
-- `web/` — Shared HTTP utilities
-
-### Key Flows
-
-- **User Registration** → User created → TaxonomyProvisioningService auto-provisions default categories
-- **Authentication** → JWT access token (15m) + refresh token (7d, httpOnly cookie)
-- **Token Refresh** → Refresh endpoint using refresh token from secure cookie
-
-## Database & Migrations
-
-- **Engine:** PostgreSQL (environment: `URL_DB`, `USERNAME_DB`, `PASSWORD_DB`)
-- **Migrations:** Liquibase (`src/main/resources/db/changelog/`)
-- **Liquibase Master:** `db.changelog-master.yaml` (includes all changes from `changes/` subdirectory)
-- **JPA Config:** `ddl-auto: none` — migrations are manual only (via Liquibase)
-
-When modifying the schema:
-1. Create a new numbered YAML file in `src/main/resources/db/changelog/changes/`
-2. Reference it in `db.changelog-master.yaml`
-3. Liquibase applies on next `bootRun` (or `gradle liquibaseUpdate`)
-
-## Configuration & Environment
-
-Profiles in `src/main/resources/`:
-- `application.yaml` — Base config (profiles, datasource, JPA, JWT, CORS)
-- `application-dev.yaml` — Development overrides
-- `application-hml.yaml` — Staging overrides
-- `application-prd.yaml` — Production overrides
-
-Key environment variables:
-- `SPRING_PROFILES_ACTIVE` — Active profile (default: `dev`)
-- `URL_DB`, `USERNAME_DB`, `PASSWORD_DB` — Database credentials
-- `JWT_SECRET` — Secret key for signing JWTs (required)
-- `CORS_ALLOWED_ORIGINS` — CORS allowed origins (default: `http://localhost:5173`)
-
-JWT configuration:
-- Access token TTL: 15 minutes
-- Refresh token TTL: 7 days
-- Refresh token stored in httpOnly cookie (`refresh_token`)
-- Cookie secure flag enabled in non-dev profiles
-
-## Taxonomy Data
-
-Taxonomy categories are defined in `src/main/resources/taxonomy/` (JSON files loaded into memory). When a user registers, TaxonomyProvisioningService creates their personal category hierarchy from these templates.
-
-## Testing
-
-- Test location: `src/test/java/com/lwv/budgetflow/`
-- Testing dependencies: Spring Boot Test (data-jpa, security, webmvc, actuator starters)
-- Test runner: JUnit Platform
-
-## Key Technologies
+## Stack Técnico
 
 - **Framework:** Spring Boot 4.1.0
-- **ORM:** Spring Data JPA (Hibernate)
-- **Migrations:** Liquibase
-- **Auth:** Spring Security + JWT (jjwt 0.12.7)
-- **Build:** Gradle (Java 21 toolchain)
-- **Database:** PostgreSQL
-- **Validation:** Spring Validation
-- **Utilities:** Lombok
+- **Linguagem:** Java 21
+- **Build:** Gradle 9.5+
+- **Database:** PostgreSQL + Liquibase
+- **Segurança:** Spring Security + JWT (JJWT 0.12.7)
+- **ORM:** Spring Data JPA + Hibernate
+- **Validação:** Jakarta Bean Validation + Spring Validation
+
+## Arquitetura
+
+O backend segue **Feature-First Modular Architecture** com 6 features principais:
+
+```
+src/main/java/com/lwv/budgetflow/
+├── config/              # Configuração global (JWT, CORS, Security)
+├── shared/              # Cross-cutting concerns e exceções
+├── auth/                # Autenticação e usuários
+├── ledger/              # Orçamentos e lançamentos
+├── taxonomy/            # Categorias e taxonomia
+└── accounts/            # Contas e formas de pagamento
+```
+
+Cada feature tem sua própria camada:
+- **Entity** — Modelo JPA
+- **Repository** — Spring Data JPA
+- **Service** — Lógica de negócio
+- **Controller** — REST endpoints
+- **DTO** — Request/Response
+
+## Suite de Testes
+
+### Cobertura Completa
+
+```
+56 testes unitários | JUnit 5 + Mockito | 100% sucesso | ~7 segundos
+```
+
+#### Testes por Feature
+
+| Feature | Testes | Arquivo |
+|---------|--------|---------|
+| AuthService | 8 | `auth/service/AuthServiceTest.java` |
+| JwtService | 9 | `auth/security/JwtServiceTest.java` |
+| EntryService | 16 | `ledger/service/EntryServiceTest.java` |
+| EntryScheduleService | 14 | `ledger/service/EntryScheduleServiceTest.java` |
+| TaxonomyProvisioningService | 3 | `taxonomy/service/TaxonomyProvisioningServiceTest.java` |
+| LookupService | 5 | `accounts/service/LookupServiceTest.java` |
+
+### Executar Testes
+
+```bash
+# Todos os testes
+./gradlew test
+
+# Testes de uma classe específica
+./gradlew test --tests AuthServiceTest
+
+# Um teste específico
+./gradlew test --tests AuthServiceTest.testRegisterSuccess
+
+# Com output detalhado
+./gradlew test --info
+
+# Forçar reexecução (pulando cache)
+./gradlew test --rerun-tasks
+
+# Ver relatório HTML
+open build/reports/tests/test/index.html
+```
+
+### Padrão de Testes
+
+Todos os testes seguem **AAA Pattern** (Arrange, Act, Assert):
+
+```java
+@Test
+@DisplayName("deve registrar novo usuário com sucesso")
+void testRegisterSuccess() {
+    // Arrange - Preparar dados e mocks
+    RegisterRequest request = new RegisterRequest("email@example.com", "senha123", "Nome");
+    when(userRepository.findByEmail(request.email())).thenReturn(Optional.empty());
+    
+    // Act - Executar a ação
+    AuthResult result = authService.register(request);
+    
+    // Assert - Verificar resultado
+    assertNotNull(result);
+    assertEquals("email@example.com", result.response().email());
+    verify(userRepository).save(any(UserEntity.class));
+}
+```
+
+### Boas Práticas para Testes
+
+1. **Use `@DisplayName`** para documentação clara do teste
+2. **Mock apenas dependências externas** (repositories, services)
+3. **Use `lenient()`** para mocks que podem não ser usados
+4. **Verifique comportamento**, não implementação
+5. **Use `ArgumentCaptor`** para validações complexas
+6. **Mantenha testes independentes** — sem dependências entre testes
+
+### Dependências de Teste
+
+```gradle
+testImplementation 'org.springframework.boot:spring-boot-starter-test'
+testImplementation 'org.springframework.security:spring-security-test'
+testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+testImplementation 'org.mockito:mockito-core:5.11.0'
+testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+```
+
+## Fluxos Principais
+
+### 1. Autenticação (AuthService)
+
+```java
+// Teste: testRegisterSuccess
+1. User.register(email, password, fullName)
+2. AuthService valida email único
+3. Senha é hasheada com BCrypt
+4. UserEntity é criado e salvo
+5. TaxonomyProvisioningService provisiona categorias padrão
+6. JWT tokens são gerados (access + refresh)
+7. Response com accessToken (15m TTL)
+```
+
+### 2. Gerenciamento de Entradas (EntryService)
+
+```java
+// Teste: testCriarEntradaUnica
+1. User cria lançamento com EntryRequest
+2. EntryService valida campos obrigatórios
+3. Categoria é validada (ownership)
+4. EntryEntity é criado e salvo
+5. Se parcelado: EntryScheduleService gera parcelas
+6. Se recorrente: EntryScheduleService gera mensalidades
+7. List<EntryEntity> retorna todas as entradas geradas
+```
+
+### 3. Provisão de Taxonomia (TaxonomyProvisioningService)
+
+```java
+// Teste: testProvisionarNovoUsuario
+1. User registra
+2. TaxonomyProvisioningService.provisionar(userId) é chamado
+3. Carrega templates (CSVs em resources/taxonomy/)
+4. Cria 22 categorias + 85 subcategorias
+5. Cria 5 contas + 6 formas de pagamento
+6. Idempotente: chamadas subsequentes não duplicam
+```
+
+## Convenções de Código
+
+### Nomes de Classes
+
+```java
+// Services
+AuthService              // Lógica de autenticação
+EntryService           // Lógica de lançamentos
+TaxonomyProvisioningService  // Lógica de provisão
+
+// Entities
+UserEntity             // Usuário
+EntryEntity            // Lançamento
+CategoryEntity         // Categoria
+RefreshTokenEntity     // Token de refresh
+
+// DTOs
+RegisterRequest        // Entrada do registro
+AuthResponse          // Resposta de autenticação
+EntryResponse         // Resposta de lançamento
+
+// Testes
+AuthServiceTest       // Testes de AuthService
+AuthServiceTest.java  // Arquivo de testes
+```
+
+### Padrão de Método
+
+```java
+// Services
+public List<EntryEntity> criar(UUID userId, EntryRequest pedido)
+public List<EntryEntity> listarMes(UUID userId, YearMonth periodo)
+public EntryEntity marcarPago(UUID userId, UUID id)
+
+// Testes
+void testCriarEntradaUnica()
+void testListarMes()
+void testMarcarPago()
+void testFalhaComDadosInvalidos()
+```
+
+## Debugging
+
+### Backend
+
+```bash
+# Run com debug
+./gradlew bootRun --debug
+
+# Ver logs da aplicação
+tail -f build/logs/spring.log
+
+# Executar teste específico com debug
+./gradlew test --tests AuthServiceTest.testRegisterSuccess --debug
+```
+
+### Testes
+
+```bash
+# Ver falhas no console
+./gradlew test --info 2>&1 | grep -i "FAILED\|error"
+
+# Gerar relatório HTML com detalhes
+./gradlew test --rerun-tasks
+open build/reports/tests/test/index.html
+
+# Ver assertion errors
+./gradlew test --tests AuthServiceTest --info | grep -A 10 "AssertionError"
+```
+
+### Database
+
+```bash
+# Verificar status de migrações
+./gradlew liquibaseStatus
+
+# Executar migrações manualmente
+./gradlew liquibaseUpdate
+
+# Rollback
+./gradlew liquibaseRollback
+```
+
+## Ambiente de Desenvolvimento
+
+### Variáveis Obrigatórias
+
+```bash
+export URL_DB=localhost:5432/budgetflow_db
+export USERNAME_DB=postgres
+export PASSWORD_DB=postgres
+export JWT_SECRET=sua-chave-super-secreta-com-minimo-32-caracteres
+export CORS_ALLOWED_ORIGINS=http://localhost:5173
+export SPRING_PROFILES_ACTIVE=dev
+```
+
+### Iniciar Tudo
+
+```bash
+# Terminal 1: Backend
+./gradlew bootRun
+
+# Terminal 2: Testes (contínuos)
+./gradlew test --continuous
+
+# Terminal 3: Monitorar logs
+tail -f build/logs/spring.log
+```
+
+## Principais Features Implementadas
+
+### ✅ AuthService (8 testes)
+- Registro de novo usuário
+- Login com validação de credenciais
+- Refresh de tokens JWT
+- Logout e revogação de tokens
+- Tratamento de exceções (email duplicado, token inválido)
+
+### ✅ JwtService (9 testes)
+- Geração de access token com claims
+- Parsing e validação de tokens
+- Geração de refresh token opaco (256 bits)
+- TTL configurável
+- Rejeição de tokens inválidos/expirados
+
+### ✅ EntryService (16 testes)
+- Criar entradas únicas
+- Criar parcelamentos (12x, 24x, etc)
+- Criar recorrências (6 meses, 12 meses)
+- Listar por mês ou período
+- Marcar como pago
+- Validação de campos
+- Scoping por usuário
+
+### ✅ EntryScheduleService (14 testes)
+- Criar parcelas com número de ordem
+- Criar mensalidades com datas futuras
+- Estender recorrências
+- Cancelar futuras
+- Validações de parâmetros
+
+### ✅ TaxonomyProvisioningService (3 testes)
+- Provisionar categorias padrão na criação de usuário
+- Carregar de templates (CSVs)
+- Idempotência (não duplica)
+
+### ✅ LookupService (5 testes)
+- Listar contas do usuário
+- Listar formas de pagamento
+- Filtrar arquivadas
+- Ordenar por nome
+
+## Extensões Futuras
+
+### Testes de Integração
+```bash
+# Adicionar TestContainers para testes com BD real
+testImplementation 'org.testcontainers:testcontainers:1.19.0'
+testImplementation 'org.testcontainers:postgresql:1.19.0'
+```
+
+### Testes de Controller
+```bash
+# Usar @WebMvcTest para testar endpoints
+@WebMvcTest(AuthController.class)
+void testRegisterEndpoint()
+```
+
+### Coverage Report
+```bash
+# Adicionar Jacoco
+./gradlew test jacocoTestReport
+open build/reports/jacoco/test/html/index.html
+```
+
+## Referências
+
+- [Spring Boot Testing](https://spring.io/guides/gs/testing-web/)
+- [Mockito Documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html)
+- [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
+- [Spring Security Testing](https://spring.io/guides/topicals/spring-security-architecture)
+
+---
+
+**Última atualização:** 13 de setembro de 2026  
+**Branch:** refatoracao/padroniza_arquitetura
