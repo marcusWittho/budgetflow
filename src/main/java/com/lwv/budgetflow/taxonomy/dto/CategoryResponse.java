@@ -1,0 +1,33 @@
+package com.lwv.budgetflow.taxonomy.dto;
+
+import com.lwv.budgetflow.taxonomy.entity.CategoryEntity;
+import com.lwv.budgetflow.taxonomy.entity.SubcategoryEntity;
+import java.util.List;
+import java.util.UUID;
+
+/** Categoria com as subcategorias aninhadas, pronta para o dropdown. */
+public record CategoryResponse(
+        UUID id,
+        String type,
+        String name,
+        List<SubcategoryResponse> subcategories
+) {
+
+    public static CategoryResponse from(CategoryEntity c) {
+        return new CategoryResponse(
+                c.getId(),
+                c.getType(),
+                c.getName(),
+                c.getSubcategories().stream()
+                        .filter(s -> !s.isArchived())
+                        .map(SubcategoryResponse::from)
+                        .toList());
+    }
+
+    public record SubcategoryResponse(UUID id, String name, String nature) {
+
+        public static SubcategoryResponse from(SubcategoryEntity s) {
+            return new SubcategoryResponse(s.getId(), s.getName(), s.getNature());
+        }
+    }
+}

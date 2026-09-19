@@ -1,0 +1,86 @@
+type,category,subcategory,nature
+income,Trabalho,Salário,
+income,Trabalho,Horas extras,
+income,Trabalho,13º/Férias,
+income,Trabalho,Bônus/PLR,
+income,Trabalho,Freelance,
+income,Benefícios,Pensão recebida,
+income,Benefícios,Vale-refeição/alimentação,
+income,Benefícios,Reembolsos,
+income,Renda passiva,Aluguel recebido,
+income,Renda passiva,Rendimentos/Juros,
+income,Renda passiva,Dividendos,
+income,Renda passiva,Resgate de investimento,
+income,Extras,Venda de itens,
+income,Extras,Presentes recebidos,
+income,Extras,Restituição de IR,
+income,Extras,Outros,
+expense,Moradia,Aluguel/Prestação,fixed
+expense,Moradia,Condomínio,fixed
+expense,Moradia,IPTU,fixed
+expense,Moradia,Luz,variable
+expense,Moradia,Água,variable
+expense,Moradia,Gás,variable
+expense,Moradia,Internet/Telefone,variable
+expense,Moradia,Manutenção/Reparos,variable
+expense,Moradia,Serviços domésticos,fixed
+expense,Moradia,Seguro residencial,fixed
+expense,Moradia,Móveis/Eletros,variable
+expense,Alimentação,Supermercado,variable
+expense,Alimentação,Feira/Padaria,variable
+expense,Alimentação,Restaurantes,variable
+expense,Alimentação,Delivery/Lanches,variable
+expense,Transporte,Combustível,variable
+expense,Transporte,Uber/99/Táxi,variable
+expense,Transporte,Metrô/Ônibus,variable
+expense,Transporte,Estacionamento/Pedágio,variable
+expense,Transporte,Prestação do carro,fixed
+expense,Transporte,Seguro/IPVA/Licenciamento,fixed
+expense,Transporte,Manutenção do veículo,variable
+expense,Saúde,Plano/Seguro saúde,fixed
+expense,Saúde,Farmácia,variable
+expense,Saúde,Consultas/Exames,variable
+expense,Saúde,Dentista,variable
+expense,Saúde,Hospital,variable
+expense,Saúde,Terapia,variable
+expense,Saúde,Academia,variable
+expense,Educação,Colégio/Faculdade,fixed
+expense,Educação,Cursos,fixed
+expense,Educação,Material escolar/Uniforme,variable
+expense,Educação,Livros,variable
+expense,Lazer,Streaming/Assinaturas,variable
+expense,Lazer,Cinema/Teatro/Shows,variable
+expense,Lazer,Bares/Festas,variable
+expense,Lazer,Viagens,variable
+expense,Lazer,Clube,variable
+expense,Lazer,Hobbies,variable
+expense,Cuidados pessoais,Roupas,variable
+expense,Cuidados pessoais,Calçados/Acessórios,variable
+expense,Cuidados pessoais,Cabeleireiro/Barbearia,variable
+expense,Cuidados pessoais,Manicure/Estética,variable
+expense,Cuidados pessoais,Higiene/Cosméticos,variable
+expense,Financeiras,Empréstimos,fixed
+expense,Financeiras,Juros/Multas,variable
+expense,Financeiras,Tarifas bancárias,variable
+expense,Financeiras,Anuidade de cartão,fixed
+expense,Financeiras,Seguro de vida,fixed
+expense,Pets,Alimentação,variable
+expense,Pets,Veterinário,variable
+expense,Pets,Banho e tosa,variable
+expense,Pets,Outros,variable
+expense,Impostos e taxas,Imposto de renda,variable
+expense,Impostos e taxas,Taxas/Documentos/Cartório,variable
+expense,Presentes e doações,Presentes,variable
+expense,Presentes e doações,Doações,variable
+expense,Outras despesas,Imprevistos,variable
+expense,Outras despesas,Não categorizado,variable
+investment,Reserva de emergência,Aporte na reserva,
+investment,Renda fixa,Tesouro Direto,
+investment,Renda fixa,CDB/LCI/LCA,
+investment,Renda fixa,Poupança,
+investment,Renda variável,Ações,
+investment,Renda variável,FIIs,
+investment,Renda variável,ETFs,
+investment,Fundos,Fundos de investimento,
+investment,Cripto,Criptomoedas,
+investment,Previdência,Previdência privada (PGBL/VGBL),
